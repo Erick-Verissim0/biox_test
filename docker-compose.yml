@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    container_name: postgres_container
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: biox
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  app:
+    build: .
+    container_name: app_container
+    depends_on:
+      - db
+    environment:
+      DATABASE_HOST: localhost
+      DATABASE_PORT: 5432
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: root
+      DATABASE: biox
+    volumes:
+      - .:/app
+      - ./wait-for-it.sh:/app/wait-for-it.sh # monta o script no container
+    command:
+      [
+        'sh',
+        '-c',
+        './wait-for-it.sh db:5432 -- npm run typeorm:run-migrations && npm run start:prod',
+      ]
+    networks:
+      - app-network
+
+volumes:
+  pgdata:
+
+networks:
+  app-network:
